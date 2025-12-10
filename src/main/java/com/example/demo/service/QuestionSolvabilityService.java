@@ -29,14 +29,14 @@ public class QuestionSolvabilityService {
 
         System.out.println("总问题数: " + allQuestions.size());
 
-        // 可解决问题：有被接受的答案 或 已回答且有正分
+        // 可解决问题：有被接受的答案，已回答且有正分
         List<Question> solvable = allQuestions.stream()
                 .filter(q -> q.getAcceptedAnswerId() != null ||
                         (q.getIsAnswered() != null && q.getIsAnswered() &&
                                 q.getScore() != null && q.getScore() >= 1))
                 .collect(Collectors.toList());
 
-        // 难解决问题：没有被接受的答案 且 (没有答案 或 未回答)
+        // 难解决问题：没有被接受的答案，没有答案，未回答
         List<Question> hardToSolve = allQuestions.stream()
                 .filter(q -> q.getAcceptedAnswerId() == null &&
                         (q.getAnswerCount() == null || q.getAnswerCount() == 0 ||

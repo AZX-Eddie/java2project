@@ -131,7 +131,17 @@ function renderTrendsChart(data) {
 function renderTrendsTable(data) {
     let html = `
         <table class="table table-striped table-hover">
-            <thead><tr><th>主题</th><th>总问题数</th><th>趋势</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>主题</th>
+                    <th>总问题数</th>
+                    <th>总答案数</th>
+                    <th>平均分数</th>
+                    <th>平均浏览量</th>
+                    <th>接受率</th>
+                    <th>趋势</th>
+                </tr>
+            </thead>
             <tbody>
     `;
 
@@ -146,7 +156,17 @@ function renderTrendsTable(data) {
             trendBadge = `<span class="badge bg-secondary">→ 0</span>`;
         }
 
-        html += `<tr><td><strong>${topic.topic}</strong></td><td>${topic.totalQuestions || 0}</td><td>${trendBadge}</td></tr>`;
+        html += `
+            <tr>
+                <td><strong>${topic.topic}</strong></td>
+                <td>${topic.totalQuestions || 0}</td>
+                <td>${topic.totalAnswers || 0}</td>
+                <td>${topic.avgScore || 0}</td>
+                <td>${Math.round(topic.avgViewCount || 0)}</td>
+                <td>${topic.acceptedAnswerRate || 0}%</td>
+                <td>${trendBadge}</td>
+            </tr>
+        `;
     });
 
     html += '</tbody></table>';

@@ -97,9 +97,16 @@ public class TopicTrendService {
         dto.setTopic(topic);
         dto.setTotalQuestions((long) topicQuestions.size());
 
-        // 按月统计问题数量
+        // 按月统计
         Map<String, Long> monthlyCount = new TreeMap<>();
         Map<String, Long> monthlyAnswerCount = new TreeMap<>();
+        Map<String, List<Integer>> monthlyScores = new TreeMap<>();  // 🔥 用于计算月均分
+
+        // 累计统计指标
+        long totalScore = 0;
+        long totalViewCount = 0;
+        long totalAnswers = 0;
+        long acceptedCount = 0;
 
         for (Question q : topicQuestions) {
             String month = parseToMonth(q.getCreationDate());
@@ -108,12 +115,40 @@ public class TopicTrendService {
 
                 int answerCount = q.getAnswerCount() != null ? q.getAnswerCount() : 0;
                 monthlyAnswerCount.merge(month, (long) answerCount, Long::sum);
+
+                // 收集分数用于计算月均
+                int score = q.getScore() != null ? q.getScore() : 0;
+                monthlyScores.computeIfAbsent(month, k -> new ArrayList<>()).add(score);
+            }
+
+            // 累计统计
+            totalScore += q.getScore() != null ? q.getScore() : 0;
+            totalViewCount += q.getViewCount() != null ? q.getViewCount() : 0;
+            totalAnswers += q.getAnswerCount() != null ? q.getAnswerCount() : 0;
+            if (q.getAcceptedAnswerId() != null) {
+                acceptedCount++;
             }
         }
 
         dto.setMonthlyQuestionCount(monthlyCount);
         dto.setMonthlyAnswerCount(monthlyAnswerCount);
         dto.setOverallTrend(calculateTrendSlope(monthlyCount));
+
+        // 设置指标
+        int totalQ = topicQuestions.size();
+        dto.setAvgScore(totalQ > 0 ? Math.round(totalScore * 100.0 / totalQ) / 100.0 : 0.0);
+        dto.setAvgViewCount(totalQ > 0 ? Math.round(totalViewCount * 100.0 / totalQ) / 100.0 : 0.0);
+        dto.setAcceptedAnswerRate(totalQ > 0 ? Math.round(acceptedCount * 10000.0 / totalQ) / 100.0 : 0.0);
+        dto.setTotalAnswers(totalAnswers);
+
+        // 计算每月平均分数
+        Map<String, Double> monthlyAvgScore = new TreeMap<>();
+        for (Map.Entry<String, List<Integer>> entry : monthlyScores.entrySet()) {
+            List<Integer> scores = entry.getValue();
+            double avg = scores.stream().mapToInt(Integer::intValue).average().orElse(0.0);
+            monthlyAvgScore.put(entry.getKey(), Math.round(avg * 100.0) / 100.0);
+        }
+        dto.setMonthlyAvgScore(monthlyAvgScore);
 
         return dto;
     }
