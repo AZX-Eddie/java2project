@@ -6,6 +6,7 @@ let pitfallBarChart = null;
 let exceptionChart = null;
 let solvabilityPieChart = null;
 let factorsChart = null;
+let comparisonChart = null;  // 添加这个
 let timingChart = null;
 
 // 颜色配置
@@ -92,7 +93,6 @@ function renderTrendsChart(data) {
         trendsChart.destroy();
     }
 
-    // 获取所有月份
     const allMonths = new Set();
     data.forEach(topic => {
         if (topic.monthlyQuestionCount) {
@@ -101,7 +101,6 @@ function renderTrendsChart(data) {
     });
     const labels = Array.from(allMonths).sort();
 
-    // 构建数据集
     const datasets = data.slice(0, 8).map((topic, index) => ({
         label: topic.topic,
         data: labels.map(month => topic.monthlyQuestionCount ? (topic.monthlyQuestionCount[month] || 0) : 0),
@@ -113,36 +112,17 @@ function renderTrendsChart(data) {
 
     trendsChart = new Chart(ctx, {
         type: 'line',
-        data: {
-            labels: labels,
-            datasets: datasets
-        },
+        data: { labels: labels, datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Java主题月度问题数量趋势'
-                }
+                legend: { position: 'top' },
+                title: { display: true, text: 'Java主题月度问题数量趋势' }
             },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: '问题数量'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: '月份'
-                    }
-                }
+                y: { beginAtZero: true, title: { display: true, text: '问题数量' } },
+                x: { title: { display: true, text: '月份' } }
             }
         }
     });
@@ -151,13 +131,7 @@ function renderTrendsChart(data) {
 function renderTrendsTable(data) {
     let html = `
         <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>主题</th>
-                    <th>总问题数</th>
-                    <th>趋势</th>
-                </tr>
-            </thead>
+            <thead><tr><th>主题</th><th>总问题数</th><th>趋势</th></tr></thead>
             <tbody>
     `;
 
@@ -172,13 +146,7 @@ function renderTrendsTable(data) {
             trendBadge = `<span class="badge bg-secondary">→ 0</span>`;
         }
 
-        html += `
-            <tr>
-                <td><strong>${topic.topic}</strong></td>
-                <td>${topic.totalQuestions || 0}</td>
-                <td>${trendBadge}</td>
-            </tr>
-        `;
+        html += `<tr><td><strong>${topic.topic}</strong></td><td>${topic.totalQuestions || 0}</td><td>${trendBadge}</td></tr>`;
     });
 
     html += '</tbody></table>';
@@ -226,22 +194,11 @@ function renderCoOccurrenceChart(data) {
             maintainAspectRatio: false,
             indexAxis: 'y',
             plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: true,
-                    text: 'Top N 主题共现对'
-                }
+                legend: { display: false },
+                title: { display: true, text: 'Top N 主题共现对' }
             },
             scales: {
-                x: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: '共现次数'
-                    }
-                }
+                x: { beginAtZero: true, title: { display: true, text: '共现次数' } }
             }
         }
     });
@@ -250,15 +207,7 @@ function renderCoOccurrenceChart(data) {
 function renderCoOccurrenceTable(data) {
     let html = `
         <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>主题1</th>
-                    <th>主题2</th>
-                    <th>共现次数</th>
-                    <th>占比</th>
-                </tr>
-            </thead>
+            <thead><tr><th>#</th><th>主题1</th><th>主题2</th><th>共现次数</th><th>占比</th></tr></thead>
             <tbody>
     `;
 
@@ -312,13 +261,7 @@ function renderPitfallCharts(data) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        boxWidth: 12,
-                        font: { size: 11 }
-                    }
-                }
+                legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
             }
         }
     });
@@ -340,17 +283,9 @@ function renderPitfallCharts(data) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
+            plugins: { legend: { display: false } },
             scales: {
-                x: {
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 45,
-                        font: { size: 10 }
-                    }
-                }
+                x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } }
             }
         }
     });
@@ -360,15 +295,14 @@ function renderPitfallDetails(data) {
     let html = '<div class="row">';
 
     data.forEach((item, index) => {
+        const keywords = item.keywords ? item.keywords.map(k => `<span class="keyword-badge">${k}</span>`).join('') : '';
         html += `
             <div class="col-md-6 mb-3">
                 <div class="pitfall-card" style="background: linear-gradient(135deg, ${COLORS[index % COLORS.length]} 0%, ${COLORS[(index + 1) % COLORS.length]} 100%);">
                     <h6>${item.pitfallCategory}</h6>
-                    <p class="mb-1"><small>${item.description}</small></p>
+                    <p class="mb-1"><small>${item.description || ''}</small></p>
                     <p class="mb-1">出现次数: <strong>${item.occurrenceCount}</strong> (${item.percentage}%)</p>
-                    <div class="keywords">
-                        ${item.keywords ? item.keywords.map(k => `<span class="keyword-badge">${k}</span>`).join('') : ''}
-                    </div>
+                    <div class="keywords">${keywords}</div>
                 </div>
             </div>
         `;
@@ -412,22 +346,10 @@ function renderExceptionChart(data) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '多线程相关异常分布'
-                }
-            },
+            plugins: { title: { display: true, text: '多线程相关异常分布' } },
             scales: {
-                x: {
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 45
-                    }
-                },
-                y: {
-                    beginAtZero: true
-                }
+                x: { ticks: { maxRotation: 45, minRotation: 45 } },
+                y: { beginAtZero: true }
             }
         }
     });
@@ -438,83 +360,113 @@ function loadSolvability() {
     fetch('/api/solvability/factors')
         .then(response => response.json())
         .then(result => {
+            console.log('可解决性数据:', result);
             if (result.success && result.data) {
-                renderSolvabilityCharts(result.data);
-                renderSolvabilityDetails(result.data);
+                renderSolvabilityPieChart(result.data);
+                renderFactorsChart(result.data);
+                renderComparisonChart(result.data);
+                renderSolvabilityTable(result.data);
             }
         })
         .catch(error => console.error('加载可解决性数据失败:', error));
 }
 
-function renderSolvabilityCharts(data) {
-    // 饼图 - 问题数量对比
-    const pieCtx = document.getElementById('solvabilityPieChart').getContext('2d');
+function renderSolvabilityPieChart(data) {
+    const ctx = document.getElementById('solvabilityPieChart').getContext('2d');
     if (solvabilityPieChart) solvabilityPieChart.destroy();
 
-    const counts = data.questionCounts;
-    solvabilityPieChart = new Chart(pieCtx, {
+    const counts = data.questionCounts || { solvable: 0, hardToSolve: 0 };
+
+    solvabilityPieChart = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: ['可解决', '难解决'],
             datasets: [{
-                data: [counts.solvable, counts.hardToSolve],
+                data: [counts.solvable || 0, counts.hardToSolve || 0],
                 backgroundColor: ['#28A745', '#DC3545']
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
+            plugins: { legend: { position: 'bottom' } }
         }
     });
+}
 
-    // 柱状图 - 因素对比
-    const barCtx = document.getElementById('factorsChart').getContext('2d');
+function renderFactorsChart(data) {
+    const ctx = document.getElementById('factorsChart').getContext('2d');
     if (factorsChart) factorsChart.destroy();
 
-    const factors = ['titleLength', 'bodyLength', 'codeSnippets', 'tagCount'];
-    const factorLabels = ['标题长度', '正文长度', '代码片段', '标签数量'];
+    const factors = [
+        { key: 'titleLength', label: '标题长度' },
+        { key: 'codeSnippets', label: '代码片段' },
+        { key: 'tagCount', label: '标签数量' }
+    ];
 
-    factorsChart = new Chart(barCtx, {
+    const labels = factors.map(f => f.label);
+    const solvableData = factors.map(f => (data[f.key] && data[f.key].solvable) ? data[f.key].solvable : 0);
+    const hardToSolveData = factors.map(f => (data[f.key] && data[f.key].hardToSolve) ? data[f.key].hardToSolve : 0);
+
+    factorsChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: factorLabels,
+            labels: labels,
             datasets: [
-                {
-                    label: '可解决',
-                    data: factors.map(f => data[f] ? data[f].solvable : 0),
-                    backgroundColor: '#28A745'
-                },
-                {
-                    label: '难解决',
-                    data: factors.map(f => data[f] ? data[f].hardToSolve : 0),
-                    backgroundColor: '#DC3545'
-                }
+                { label: '可解决', data: solvableData, backgroundColor: '#28A745' },
+                { label: '难解决', data: hardToSolveData, backgroundColor: '#DC3545' }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '问题特征因素对比'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+            plugins: { title: { display: true, text: '特征因素对比' } },
+            scales: { y: { beginAtZero: true } }
         }
     });
 }
 
-function renderSolvabilityDetails(data) {
+function renderComparisonChart(data) {
+    const ctx = document.getElementById('comparisonChart');
+    if (!ctx) {
+        console.error('找不到 comparisonChart canvas');
+        return;
+    }
+
+    if (comparisonChart) comparisonChart.destroy();
+
+    const solvableBody = (data.bodyLength && data.bodyLength.solvable) ? data.bodyLength.solvable : 0;
+    const hardToSolveBody = (data.bodyLength && data.bodyLength.hardToSolve) ? data.bodyLength.hardToSolve : 0;
+    const solvableRep = (data.userReputation && data.userReputation.solvable) ? data.userReputation.solvable : 0;
+    const hardToSolveRep = (data.userReputation && data.userReputation.hardToSolve) ? data.userReputation.hardToSolve : 0;
+
+    comparisonChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['正文长度', '用户声望'],
+            datasets: [
+                { label: '可解决', data: [solvableBody, solvableRep], backgroundColor: '#28A745' },
+                { label: '难解决', data: [hardToSolveBody, hardToSolveRep], backgroundColor: '#DC3545' }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { title: { display: true, text: '正文长度与用户声望对比' } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+function renderSolvabilityTable(data) {
+    const factorMap = {
+        'titleLength': '平均标题长度',
+        'bodyLength': '平均正文长度',
+        'codeSnippets': '平均代码片段数',
+        'userReputation': '平均用户声望',
+        'tagCount': '平均标签数量'
+    };
+
     let html = `
         <table class="table table-bordered">
             <thead>
@@ -528,30 +480,20 @@ function renderSolvabilityDetails(data) {
             <tbody>
     `;
 
-    const factorMap = {
-        'titleLength': '平均标题长度',
-        'bodyLength': '平均正文长度',
-        'codeSnippets': '平均代码片段数',
-        'userReputation': '平均用户声望',
-        'tagCount': '平均标签数量'
-    };
-
     for (const [key, label] of Object.entries(factorMap)) {
-        if (data[key]) {
-            const solvable = data[key].solvable || 0;
-            const hardToSolve = data[key].hardToSolve || 0;
-            const diff = (solvable - hardToSolve).toFixed(2);
-            const diffClass = diff > 0 ? 'text-success' : (diff < 0 ? 'text-danger' : '');
+        const solvable = (data[key] && data[key].solvable !== undefined) ? data[key].solvable : 0;
+        const hardToSolve = (data[key] && data[key].hardToSolve !== undefined) ? data[key].hardToSolve : 0;
+        const diff = (solvable - hardToSolve).toFixed(2);
+        const diffClass = parseFloat(diff) > 0 ? 'text-success' : (parseFloat(diff) < 0 ? 'text-danger' : '');
 
-            html += `
-                <tr>
-                    <td><strong>${label}</strong></td>
-                    <td>${solvable.toFixed(2)}</td>
-                    <td>${hardToSolve.toFixed(2)}</td>
-                    <td class="${diffClass}">${diff > 0 ? '+' : ''}${diff}</td>
-                </tr>
-            `;
-        }
+        html += `
+            <tr>
+                <td><strong>${label}</strong></td>
+                <td>${solvable.toFixed(2)}</td>
+                <td>${hardToSolve.toFixed(2)}</td>
+                <td class="${diffClass}">${parseFloat(diff) > 0 ? '+' : ''}${diff}</td>
+            </tr>
+        `;
     }
 
     html += '</tbody></table>';
@@ -572,9 +514,7 @@ function loadTiming() {
 function renderTimingChart(data) {
     const ctx = document.getElementById('timingChart').getContext('2d');
 
-    if (timingChart) {
-        timingChart.destroy();
-    }
+    if (timingChart) timingChart.destroy();
 
     const hours = Array.from({length: 24}, (_, i) => i);
     const solvableData = hours.map(h => data.solvableHourDistribution ? (data.solvableHourDistribution[h] || 0) : 0);
@@ -589,7 +529,7 @@ function renderTimingChart(data) {
                     label: '可解决问题',
                     data: solvableData,
                     borderColor: '#28A745',
-                    backgroundColor: '#28A74520',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
                     tension: 0.4,
                     fill: true
                 },
@@ -597,7 +537,7 @@ function renderTimingChart(data) {
                     label: '难解决问题',
                     data: hardToSolveData,
                     borderColor: '#DC3545',
-                    backgroundColor: '#DC354520',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
                     tension: 0.4,
                     fill: true
                 }
@@ -606,26 +546,10 @@ function renderTimingChart(data) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '按发布小时分布对比'
-                }
-            },
+            plugins: { title: { display: true, text: '按发布小时分布对比' } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: '问题数量'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: '发布时间（小时）'
-                    }
-                }
+                y: { beginAtZero: true, title: { display: true, text: '问题数量' } },
+                x: { title: { display: true, text: '发布时间（小时）' } }
             }
         }
     });

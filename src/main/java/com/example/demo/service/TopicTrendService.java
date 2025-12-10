@@ -17,7 +17,6 @@ public class TopicTrendService {
 
     private final QuestionRepository questionRepository;
 
-    // Java课程相关主题
     private static final List<String> JAVA_TOPICS = Arrays.asList(
             "generics", "collections", "stream", "lambda", "multithreading",
             "concurrency", "io", "nio", "socket", "reflection", "spring-boot",
@@ -36,8 +35,16 @@ public class TopicTrendService {
     public List<TopicTrendDTO> getAllTopicTrends(int years) {
         List<Question> allQuestions = questionRepository.findAll();
 
+        // 根据时间范围过滤问题
+        LocalDate cutoffDate = LocalDate.now().minusYears(years);
+        List<Question> filteredQuestions = allQuestions.stream()
+                .filter(q -> isWithinTimeRange(q.getCreationDate(), cutoffDate))
+                .collect(Collectors.toList());
+
+        System.out.println("时间范围: " + years + " 年，筛选后问题数: " + filteredQuestions.size());
+
         return JAVA_TOPICS.stream()
-                .map(topic -> calculateTopicTrend(topic, allQuestions, years))
+                .map(topic -> calculateTopicTrend(topic, filteredQuestions))
                 .filter(dto -> dto.getTotalQuestions() > 0)
                 .sorted((a, b) -> Long.compare(b.getTotalQuestions(), a.getTotalQuestions()))
                 .collect(Collectors.toList());
@@ -48,15 +55,39 @@ public class TopicTrendService {
      */
     public TopicTrendDTO getTopicTrend(String topic, int years) {
         List<Question> allQuestions = questionRepository.findAll();
-        return calculateTopicTrend(topic, allQuestions, years);
+
+        // 根据时间范围过滤问题
+        LocalDate cutoffDate = LocalDate.now().minusYears(years);
+        List<Question> filteredQuestions = allQuestions.stream()
+                .filter(q -> isWithinTimeRange(q.getCreationDate(), cutoffDate))
+                .collect(Collectors.toList());
+
+        return calculateTopicTrend(topic, filteredQuestions);
+    }
+
+    /**
+     * 判断问题是否在时间范围内
+     */
+    private boolean isWithinTimeRange(String creationDate, LocalDate cutoffDate) {
+        if (creationDate == null) return false;
+
+        try {
+            long timestamp = Long.parseLong(creationDate);
+            LocalDate questionDate = Instant.ofEpochSecond(timestamp)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            return !questionDate.isBefore(cutoffDate);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
      * 计算主题趋势
      */
-    private TopicTrendDTO calculateTopicTrend(String topic, List<Question> allQuestions, int years) {
+    private TopicTrendDTO calculateTopicTrend(String topic, List<Question> questions) {
         // 筛选包含该主题标签的问题
-        List<Question> topicQuestions = allQuestions.stream()
+        List<Question> topicQuestions = questions.stream()
                 .filter(q -> q.getTags() != null &&
                         q.getTags().stream().anyMatch(tag ->
                                 tag.toLowerCase().contains(topic.toLowerCase())))
@@ -82,8 +113,6 @@ public class TopicTrendService {
 
         dto.setMonthlyQuestionCount(monthlyCount);
         dto.setMonthlyAnswerCount(monthlyAnswerCount);
-
-        // 计算趋势（简单线性回归斜率）
         dto.setOverallTrend(calculateTrendSlope(monthlyCount));
 
         return dto;

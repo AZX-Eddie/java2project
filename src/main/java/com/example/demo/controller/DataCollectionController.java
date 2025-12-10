@@ -72,6 +72,24 @@ public class DataCollectionController {
     }
 
     /**
+     * 批量收集评论（更高效）
+     * GET http://localhost:8080/admin/collect-comments-batch
+     */
+    @GetMapping("/collect-comments-batch")
+    public Map<String, Object> collectCommentsBatch() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "started");
+        response.put("message", "正在批量收集评论数据...");
+
+        new Thread(() -> {
+            String result = dataCollectionService.fetchCommentsBatch();
+            System.out.println(result);
+        }).start();
+
+        return response;
+    }
+
+    /**
      * 查看数据统计
      * GET http://localhost:8080/admin/stats
      */

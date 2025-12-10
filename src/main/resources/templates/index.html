@@ -218,16 +218,25 @@
                 </div>
             </div>
 
-            <!-- 详细对比 -->
+            <!-- 正文长度对比（单独图表，因为数值差距大） -->
             <div class="card mt-3">
                 <div class="card-header">
-                    <h5>📊 详细特征对比</h5>
+                    <h5>📊 正文长度对比</h5>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container">
+                    <div class="chart-container-small">
                         <canvas id="comparisonChart"></canvas>
                     </div>
-                    <div id="solvabilityDetails" class="mt-3"></div>
+                </div>
+            </div>
+
+            <!-- 详细对比表格 -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5>📋 详细特征对比</h5>
+                </div>
+                <div class="card-body">
+                    <div id="solvabilityDetails"></div>
                 </div>
             </div>
 
@@ -243,7 +252,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 

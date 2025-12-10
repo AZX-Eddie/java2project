@@ -27,18 +27,24 @@ public class QuestionSolvabilityService {
     public Map<String, QuestionCharacteristicDTO> compareCharacteristics() {
         List<Question> allQuestions = questionRepository.findAll();
 
-        // 可解决问题：有被接受的答案 或 有高分答案
+        System.out.println("总问题数: " + allQuestions.size());
+
+        // 可解决问题：有被接受的答案 或 已回答且有正分
         List<Question> solvable = allQuestions.stream()
                 .filter(q -> q.getAcceptedAnswerId() != null ||
-                        (q.getIsAnswered() != null && q.getIsAnswered() && q.getScore() >= 1))
+                        (q.getIsAnswered() != null && q.getIsAnswered() &&
+                                q.getScore() != null && q.getScore() >= 1))
                 .collect(Collectors.toList());
 
-        // 难解决问题：没有被接受的答案 且 没有答案或低参与度
+        // 难解决问题：没有被接受的答案 且 (没有答案 或 未回答)
         List<Question> hardToSolve = allQuestions.stream()
                 .filter(q -> q.getAcceptedAnswerId() == null &&
                         (q.getAnswerCount() == null || q.getAnswerCount() == 0 ||
-                                (q.getIsAnswered() == null || !q.getIsAnswered())))
+                                q.getIsAnswered() == null || !q.getIsAnswered()))
                 .collect(Collectors.toList());
+
+        System.out.println("可解决问题数: " + solvable.size());
+        System.out.println("难解决问题数: " + hardToSolve.size());
 
         Map<String, QuestionCharacteristicDTO> result = new HashMap<>();
         result.put("solvable", analyzeCharacteristics("solvable", solvable));
@@ -55,7 +61,16 @@ public class QuestionSolvabilityService {
         dto.setCategory(category);
         dto.setQuestionCount((long) questions.size());
 
-        if (questions.isEmpty()) return dto;
+        if (questions.isEmpty()) {
+            dto.setAvgTitleLength(0.0);
+            dto.setAvgBodyLength(0.0);
+            dto.setAvgCodeSnippetCount(0.0);
+            dto.setAvgOwnerReputation(0.0);
+            dto.setAvgTagCount(0.0);
+            dto.setTopTags(new HashMap<>());
+            dto.setHourDistribution(new HashMap<>());
+            return dto;
+        }
 
         // 因素1: 标题长度
         double avgTitleLength = questions.stream()
@@ -73,16 +88,10 @@ public class QuestionSolvabilityService {
                 .orElse(0);
         dto.setAvgBodyLength(Math.round(avgBodyLength * 100.0) / 100.0);
 
-        // 因素3: 代码片段数量
-        Pattern codePattern = Pattern.compile("<code>|```");
+        // 因素3: 代码片段数量（改进的匹配模式）
         double avgCodeCount = questions.stream()
                 .filter(q -> q.getBody() != null)
-                .mapToInt(q -> {
-                    Matcher matcher = codePattern.matcher(q.getBody());
-                    int count = 0;
-                    while (matcher.find()) count++;
-                    return count / 2; // 开闭标签成对
-                })
+                .mapToInt(q -> countCodeSnippets(q.getBody()))
                 .average()
                 .orElse(0);
         dto.setAvgCodeSnippetCount(Math.round(avgCodeCount * 100.0) / 100.0);
@@ -97,11 +106,15 @@ public class QuestionSolvabilityService {
 
         // 因素5: 标签数量
         double avgTagCount = questions.stream()
-                .filter(q -> q.getTags() != null)
+                .filter(q -> q.getTags() != null && !q.getTags().isEmpty())
                 .mapToInt(q -> q.getTags().size())
                 .average()
                 .orElse(0);
         dto.setAvgTagCount(Math.round(avgTagCount * 100.0) / 100.0);
+
+        // 调试输出
+        System.out.println(category + " - 平均代码片段: " + dto.getAvgCodeSnippetCount() +
+                ", 平均标签数: " + dto.getAvgTagCount());
 
         // Top标签统计
         Map<String, Long> tagCounts = questions.stream()
@@ -121,22 +134,48 @@ public class QuestionSolvabilityService {
         dto.setTopTags(topTags);
 
         // 发布时间（小时）分布
-        Map<Integer, Long> hourDistribution = questions.stream()
+        Map<Integer, Long> hourDistribution = new TreeMap<>();
+        for (int i = 0; i < 24; i++) {
+            hourDistribution.put(i, 0L);
+        }
+
+        questions.stream()
                 .filter(q -> q.getCreationDate() != null)
-                .collect(Collectors.groupingBy(
-                        q -> parseToHour(q.getCreationDate()),
-                        TreeMap::new,
-                        Collectors.counting()
-                ));
+                .forEach(q -> {
+                    int hour = parseToHour(q.getCreationDate());
+                    hourDistribution.merge(hour, 1L, Long::sum);
+                });
+
         dto.setHourDistribution(hourDistribution);
 
         return dto;
     }
 
     /**
+     * 计算代码片段数量
+     */
+    private int countCodeSnippets(String body) {
+        if (body == null || body.isEmpty()) return 0;
+
+        int count = 0;
+
+        // 匹配 <code>...</code> 标签
+        Pattern codeTagPattern = Pattern.compile("<code[^>]*>", Pattern.CASE_INSENSITIVE);
+        Matcher matcher1 = codeTagPattern.matcher(body);
+        while (matcher1.find()) count++;
+
+        // 匹配 <pre>...</pre> 标签（通常包含代码块）
+        Pattern preTagPattern = Pattern.compile("<pre[^>]*>", Pattern.CASE_INSENSITIVE);
+        Matcher matcher2 = preTagPattern.matcher(body);
+        while (matcher2.find()) count++;
+
+        return count;
+    }
+
+    /**
      * 将时间戳转换为小时
      */
-    private Integer parseToHour(String creationDate) {
+    private int parseToHour(String creationDate) {
         try {
             long timestamp = Long.parseLong(creationDate);
             return Instant.ofEpochSecond(timestamp)
@@ -160,38 +199,38 @@ public class QuestionSolvabilityService {
 
         // 标题长度对比
         Map<String, Double> titleLength = new LinkedHashMap<>();
-        titleLength.put("solvable", solvable.getAvgTitleLength());
-        titleLength.put("hardToSolve", hardToSolve.getAvgTitleLength());
+        titleLength.put("solvable", solvable.getAvgTitleLength() != null ? solvable.getAvgTitleLength() : 0.0);
+        titleLength.put("hardToSolve", hardToSolve.getAvgTitleLength() != null ? hardToSolve.getAvgTitleLength() : 0.0);
         comparison.put("titleLength", titleLength);
 
         // 正文长度对比
         Map<String, Double> bodyLength = new LinkedHashMap<>();
-        bodyLength.put("solvable", solvable.getAvgBodyLength());
-        bodyLength.put("hardToSolve", hardToSolve.getAvgBodyLength());
+        bodyLength.put("solvable", solvable.getAvgBodyLength() != null ? solvable.getAvgBodyLength() : 0.0);
+        bodyLength.put("hardToSolve", hardToSolve.getAvgBodyLength() != null ? hardToSolve.getAvgBodyLength() : 0.0);
         comparison.put("bodyLength", bodyLength);
 
         // 代码片段对比
         Map<String, Double> codeSnippets = new LinkedHashMap<>();
-        codeSnippets.put("solvable", solvable.getAvgCodeSnippetCount());
-        codeSnippets.put("hardToSolve", hardToSolve.getAvgCodeSnippetCount());
+        codeSnippets.put("solvable", solvable.getAvgCodeSnippetCount() != null ? solvable.getAvgCodeSnippetCount() : 0.0);
+        codeSnippets.put("hardToSolve", hardToSolve.getAvgCodeSnippetCount() != null ? hardToSolve.getAvgCodeSnippetCount() : 0.0);
         comparison.put("codeSnippets", codeSnippets);
 
         // 用户声望对比
         Map<String, Double> reputation = new LinkedHashMap<>();
-        reputation.put("solvable", solvable.getAvgOwnerReputation());
-        reputation.put("hardToSolve", hardToSolve.getAvgOwnerReputation());
+        reputation.put("solvable", solvable.getAvgOwnerReputation() != null ? solvable.getAvgOwnerReputation() : 0.0);
+        reputation.put("hardToSolve", hardToSolve.getAvgOwnerReputation() != null ? hardToSolve.getAvgOwnerReputation() : 0.0);
         comparison.put("userReputation", reputation);
 
         // 标签数量对比
         Map<String, Double> tagCount = new LinkedHashMap<>();
-        tagCount.put("solvable", solvable.getAvgTagCount());
-        tagCount.put("hardToSolve", hardToSolve.getAvgTagCount());
+        tagCount.put("solvable", solvable.getAvgTagCount() != null ? solvable.getAvgTagCount() : 0.0);
+        tagCount.put("hardToSolve", hardToSolve.getAvgTagCount() != null ? hardToSolve.getAvgTagCount() : 0.0);
         comparison.put("tagCount", tagCount);
 
         // 问题数量
         Map<String, Long> counts = new LinkedHashMap<>();
-        counts.put("solvable", solvable.getQuestionCount());
-        counts.put("hardToSolve", hardToSolve.getQuestionCount());
+        counts.put("solvable", solvable.getQuestionCount() != null ? solvable.getQuestionCount() : 0L);
+        counts.put("hardToSolve", hardToSolve.getQuestionCount() != null ? hardToSolve.getQuestionCount() : 0L);
         comparison.put("questionCounts", counts);
 
         return comparison;

@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class DataCollectionService {
@@ -286,6 +288,92 @@ public class DataCollectionService {
 
         return String.format("评论收集完成！新保存 %d 条评论，跳过 %d 个问题，失败 %d 个",
                 totalComments, skipped, failed);
+    }
+
+    /**
+     * 批量收集评论（每次请求获取多个问题的评论）
+     */
+    public String fetchCommentsBatch() {
+        int totalComments = 0;
+        int processed = 0;
+
+        var questions = questionRepository.findAll();
+        int total = questions.size();
+        int batchSize = 100;  // 每批100个问题
+
+        List<Long> questionIds = questions.stream()
+                .map(Question::getQuestionId)
+                .collect(Collectors.toList());
+
+        for (int i = 0; i < questionIds.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, questionIds.size());
+            List<Long> batch = questionIds.subList(i, end);
+
+            // 用分号连接多个ID
+            String ids = batch.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(";"));
+
+            try {
+                String url = BASE_URL + "/questions/" + ids + "/comments?" +
+                        "&order=desc" +
+                        "&sort=creation" +
+                        "&site=" + SITE +
+                        "&filter=withbody" +
+                        "&pagesize=100";
+
+                String response = restTemplate.getForObject(url, String.class);
+                JSONObject json = new JSONObject(response);
+                JSONArray items = json.getJSONArray("items");
+
+                for (int j = 0; j < items.length(); j++) {
+                    JSONObject c = items.getJSONObject(j);
+                    Long postId = c.getLong("post_id");
+
+                    // 查找对应的问题
+                    Question question = questionRepository.findById(postId).orElse(null);
+                    if (question != null) {
+                        Comment comment = new Comment();
+                        comment.setCommentId(c.getLong("comment_id"));
+                        comment.setBody(c.optString("body", ""));
+                        comment.setScore(c.optInt("score", 0));
+                        comment.setCreationDate(String.valueOf(c.getLong("creation_date")));
+
+                        if (c.has("owner")) {
+                            JSONObject owner = c.getJSONObject("owner");
+                            comment.setOwnerName(owner.optString("display_name", "unknown"));
+                            if (owner.has("user_id")) {
+                                comment.setOwnerUserId(owner.getLong("user_id"));
+                            }
+                        }
+
+                        comment.setQuestion(question);
+                        commentRepository.save(comment);
+                        totalComments++;
+                    }
+                }
+
+                processed += batch.size();
+                System.out.println("批量处理 " + processed + "/" + total + " 个问题，已收集 " + totalComments + " 条评论");
+
+                // 等待3秒
+                Thread.sleep(3000);
+
+            } catch (Exception e) {
+                System.err.println("批量收集评论失败: " + e.getMessage());
+
+                if (e.getMessage() != null && e.getMessage().contains("429")) {
+                    System.out.println("触发限流，等待120秒...");
+                    try {
+                        Thread.sleep(120000);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+
+        return "评论收集完成！共保存 " + totalComments + " 条评论";
     }
 
     /**
