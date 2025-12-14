@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stack Overflow Java Analysis</title>
-
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Chart.js -->
@@ -13,7 +12,6 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-
 <!-- 导航栏 -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
@@ -33,7 +31,6 @@
 
 <!-- 主内容 -->
 <div class="container mt-4">
-
     <!-- 数据统计卡片 -->
     <div class="row mb-4" id="statsCards">
         <div class="col-md-4">
@@ -66,7 +63,7 @@
     <ul class="nav nav-tabs" id="analysisTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="trends-tab" data-bs-toggle="tab" data-bs-target="#trends" type="button">
-                📈 主题趋势
+                🔥 主题热度趋势
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -88,34 +85,57 @@
 
     <!-- 标签页内容 -->
     <div class="tab-content" id="analysisTabContent">
-
-        <!-- 问题1: 主题趋势 -->
+        <!-- 问题1: 主题趋势（修改后） -->
         <div class="tab-pane fade show active" id="trends" role="tabpanel">
             <div class="card mt-3">
-                <div class="card-header">
-                    <h5>📈 Java主题趋势分析</h5>
-                    <div class="row">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5>🔥 Java主题相对热度趋势分析</h5>
+                    <p class="mb-0 small">基于问题数、分数、浏览量、回答率、采纳率的综合热度指标（0-100）</p>
+                    <div class="row mt-3">
                         <div class="col-md-4">
-                            <label>时间范围（年）:</label>
+                            <label class="text-white">时间范围（年）:</label>
                             <select id="trendYears" class="form-select" onchange="loadTrends()">
                                 <option value="1">1年</option>
-                                <option value="2">2年</option>
-                                <option value="3" selected>3年</option>
+                                <option value="2" selected>2年</option>
+                                <option value="3">3年</option>
                                 <option value="5">5年</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label>选择主题:</label>
+                            <label class="text-white">选择主题:</label>
                             <select id="trendTopic" class="form-select" onchange="loadSingleTrend()">
-                                <option value="all">全部主题</option>
+                                <option value="all">全部主题（Top 8）</option>
                             </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="heat-legend">
+                                <small class="text-white">
+                                    热度等级:
+                                    <span class="badge bg-danger">75-100</span>
+                                    <span class="badge bg-warning text-dark">50-74</span>
+                                    <span class="badge bg-info">25-49</span>
+                                    <span class="badge bg-secondary">0-24</span>
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container">
+                    <div class="chart-container" style="height: 450px;">
                         <canvas id="trendsChart"></canvas>
                     </div>
+
+                    <!-- 说明卡片 -->
+                    <div class="alert alert-info mt-3" role="alert">
+                        <strong>📊 热度指数说明：</strong>
+                        <ul class="mb-0 mt-2">
+                            <li><strong>0-100分</strong>：综合问题数量(30%)、平均分数(25%)、平均浏览量(20%)、回答率(15%)、采纳率(10%)计算</li>
+                            <li><strong>趋势值</strong>：正值表示热度上升，负值表示热度下降</li>
+                            <li><strong>整体热度</strong>：最近3个月的平均热度指数</li>
+                        </ul>
+                    </div>
+
+                    <h6 class="mt-4">📋 详细数据对比</h6>
                     <div id="trendsTable" class="mt-3"></div>
                 </div>
             </div>
@@ -218,7 +238,7 @@
                 </div>
             </div>
 
-            <!-- 正文长度对比（单独图表，因为数值差距大） -->
+            <!-- 正文长度对比 -->
             <div class="card mt-3">
                 <div class="card-header">
                     <h5>📊 正文长度对比</h5>
@@ -266,7 +286,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <!-- 自定义脚本 -->
 <script src="/js/charts.js"></script>
-
 <script>
     // 页面加载完成后初始化
     document.addEventListener('DOMContentLoaded', function() {
@@ -278,12 +297,14 @@
         document.getElementById('cooccurrence-tab').addEventListener('click', function() {
             setTimeout(loadCoOccurrence, 100);
         });
+
         document.getElementById('multithreading-tab').addEventListener('click', function() {
             setTimeout(function() {
                 loadPitfalls();
                 loadExceptions();
             }, 100);
         });
+
         document.getElementById('solvability-tab').addEventListener('click', function() {
             setTimeout(function() {
                 loadSolvability();
@@ -292,6 +313,5 @@
         });
     });
 </script>
-
 </body>
 </html>

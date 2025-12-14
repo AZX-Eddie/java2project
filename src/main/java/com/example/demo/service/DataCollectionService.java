@@ -11,6 +11,10 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,7 +22,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class DataCollectionService {
-
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final CommentRepository commentRepository;
@@ -37,9 +40,158 @@ public class DataCollectionService {
     }
 
     /**
-     * 收集Java相关问题（带重试机制）
+     * 🔥 新方法：按月收集固定数量的问题
+     * @param monthsBack 往前追溯的月份数
+     * @param questionsPerMonth 每月收集的问题数量
+     */
+    public String fetchQuestionsByMonth(int monthsBack, int questionsPerMonth) {
+        int totalSaved = 0;
+        int failedMonths = 0;
+
+        LocalDate now = LocalDate.now();
+
+        for (int i = 0; i < monthsBack; i++) {
+            YearMonth targetMonth = YearMonth.from(now.minusMonths(i));
+
+            // 计算该月的时间范围（Unix timestamp）
+            long monthStart = targetMonth.atDay(1)
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toEpochSecond();
+
+            long monthEnd = targetMonth.atEndOfMonth()
+                    .atTime(23, 59, 59)
+                    .atZone(ZoneId.systemDefault())
+                    .toEpochSecond();
+
+            System.out.println("\n📅 开始收集 " + targetMonth + " 的数据...");
+
+            try {
+                int savedThisMonth = fetchQuestionsInDateRange(
+                        monthStart,
+                        monthEnd,
+                        questionsPerMonth,
+                        targetMonth.toString()
+                );
+                totalSaved += savedThisMonth;
+
+                System.out.println("✅ " + targetMonth + " 完成，保存 " + savedThisMonth + " 条");
+
+            } catch (Exception e) {
+                failedMonths++;
+                System.err.println("❌ " + targetMonth + " 失败: " + e.getMessage());
+            }
+
+            // 月份之间暂停
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        return String.format("📊 按月收集完成！共保存 %d 条问题，%d 个月失败",
+                totalSaved, failedMonths);
+    }
+
+    /**
+     * 收集指定时间范围内的问题
+     */
+    private int fetchQuestionsInDateRange(long fromDate, long toDate,
+                                          int targetCount, String monthLabel) {
+        int saved = 0;
+        int page = 1;
+        int maxPages = (targetCount / 100) + 2; // 预留缓冲
+
+        while (saved < targetCount && page <= maxPages) {
+            int retryCount = 0;
+            int maxRetries = 3;
+            boolean success = false;
+
+            while (!success && retryCount < maxRetries) {
+                try {
+                    String url = BASE_URL + "/questions?" +
+                            "page=" + page +
+                            "&pagesize=100" +
+                            "&fromdate=" + fromDate +
+                            "&todate=" + toDate +
+                            "&order=desc" +
+                            "&sort=votes" +  // 按投票排序，获取有代表性的问题
+                            "&tagged=java" +
+                            "&site=" + SITE +
+                            "&filter=withbody";
+
+                    String response = restTemplate.getForObject(url, String.class);
+                    JSONObject json = new JSONObject(response);
+                    JSONArray items = json.getJSONArray("items");
+
+                    if (items.length() == 0) {
+                        System.out.println("  ⚠️ " + monthLabel + " 第 " + page + " 页无数据，停止");
+                        return saved;
+                    }
+
+                    int savedThisPage = 0;
+                    for (int i = 0; i < items.length() && saved < targetCount; i++) {
+                        JSONObject q = items.getJSONObject(i);
+                        Question question = parseQuestion(q);
+
+                        if (!questionRepository.existsById(question.getQuestionId())) {
+                            questionRepository.save(question);
+                            saved++;
+                            savedThisPage++;
+                        }
+                    }
+
+                    System.out.println("  📄 " + monthLabel + " 第 " + page + " 页: +"
+                            + savedThisPage + " (总计 " + saved + "/" + targetCount + ")");
+
+                    success = true;
+                    Thread.sleep(2000);
+
+                } catch (Exception e) {
+                    retryCount++;
+                    handleRequestError(e, retryCount, maxRetries, monthLabel, page);
+                }
+            }
+
+            if (!success) {
+                break; // 该页失败，跳过
+            }
+            page++;
+        }
+
+        return saved;
+    }
+
+    /**
+     * 处理请求错误（重试逻辑）
+     */
+    private void handleRequestError(Exception e, int retryCount, int maxRetries,
+                                    String context, int page) {
+        System.err.println("  ⚠️ " + context + " 第 " + page + " 页出错 (尝试 "
+                + retryCount + "/" + maxRetries + "): " + e.getMessage());
+
+        if (e.getMessage() != null && e.getMessage().contains("429")) {
+            int waitTime = 60 * retryCount;
+            System.out.println("  ⏳ 触发限流，等待 " + waitTime + " 秒...");
+            try {
+                Thread.sleep(waitTime * 1000L);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+        } else {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    /**
+     * 原有方法保留：收集Java相关问题（按活跃度）
      */
     public String fetchJavaQuestions(int pages) {
+        // ... 保持原有代码不变 ...
         int totalSaved = 0;
         int failedPages = 0;
 
@@ -68,7 +220,6 @@ public class DataCollectionService {
                         JSONObject q = items.getJSONObject(i);
                         Question question = parseQuestion(q);
 
-                        // 检查是否已存在，避免重复
                         if (!questionRepository.existsById(question.getQuestionId())) {
                             questionRepository.save(question);
                             totalSaved++;
@@ -76,19 +227,19 @@ public class DataCollectionService {
                         }
                     }
 
-                    System.out.println("第 " + page + "/" + pages + " 页完成，本页保存 " + savedThisPage + " 条，总计: " + totalSaved);
-                    success = true;
+                    System.out.println("第 " + page + "/" + pages + " 页完成，本页保存 "
+                            + savedThisPage + " 条，总计: " + totalSaved);
 
-                    // 正常请求后等待2秒
+                    success = true;
                     Thread.sleep(2000);
 
                 } catch (Exception e) {
                     retryCount++;
-                    System.err.println("第 " + page + " 页出错 (尝试 " + retryCount + "/" + maxRetries + "): " + e.getMessage());
+                    System.err.println("第 " + page + " 页出错 (尝试 " + retryCount + "/"
+                            + maxRetries + "): " + e.getMessage());
 
                     if (e.getMessage() != null && e.getMessage().contains("429")) {
-                        // 限流错误，等待更长时间
-                        int waitTime = 60 * retryCount; // 第1次等60秒，第2次等120秒...
+                        int waitTime = 60 * retryCount;
                         System.out.println("触发限流，等待 " + waitTime + " 秒后重试...");
                         try {
                             Thread.sleep(waitTime * 1000L);
@@ -96,7 +247,6 @@ public class DataCollectionService {
                             Thread.currentThread().interrupt();
                         }
                     } else {
-                        // 其他错误，短暂等待后重试
                         try {
                             Thread.sleep(5000);
                         } catch (InterruptedException ie) {
@@ -115,6 +265,8 @@ public class DataCollectionService {
         return String.format("数据收集完成！共保存 %d 条问题，%d 页失败", totalSaved, failedPages);
     }
 
+    // ... 其他方法保持不变（fetchAnswersForQuestions, fetchCommentsForQuestions等）...
+
     /**
      * 为已有问题收集答案（智能跳过 + 限流处理）
      */
@@ -130,13 +282,11 @@ public class DataCollectionService {
         for (Question question : questions) {
             processed++;
 
-            // 跳过没有答案的问题
             if (question.getAnswerCount() != null && question.getAnswerCount() == 0) {
                 skipped++;
                 continue;
             }
 
-            // 检查数据库中是否已有该问题的答案
             long existingAnswers = answerRepository.countByQuestionId(question.getQuestionId());
             if (existingAnswers > 0) {
                 skipped++;
