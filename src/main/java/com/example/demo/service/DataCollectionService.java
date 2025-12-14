@@ -206,7 +206,7 @@ public class DataCollectionService {
                             "page=" + page +
                             "&pagesize=100" +
                             "&order=desc" +
-                            "&sort=activity" +
+                            "&sort=creation" +
                             "&tagged=java" +
                             "&site=" + SITE +
                             "&filter=withbody";
