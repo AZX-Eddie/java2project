@@ -100,16 +100,29 @@ body {
     transition: background-color 0.3s;
 }
 
-/* 🔥 新增：热度徽章样式 */
+/* 🔥 热度徽章（动态渐变） */
 .heat-badge {
+    --hue: 210;
+    --sat: 80%;
+    --light1: 55%;
+    --light2: 40%;
+
     display: inline-block;
     padding: 4px 12px;
     border-radius: 20px;
     font-weight: bold;
     font-size: 16px;
-    background: linear-gradient(135deg, #5858a1 0%, #6615df 100%);
-    color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: #fff;
+
+    background: linear-gradient(
+            135deg,
+            hsl(var(--hue), var(--sat), var(--light1)),
+            hsl(var(--hue), var(--sat), var(--light2))
+    );
+
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    min-width: 56px;
+    text-align: center;
 }
 
 /* 🔥 新增：热度图例样式 */

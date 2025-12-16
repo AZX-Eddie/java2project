@@ -37,6 +37,20 @@ function loadStats() {
 }
 
 // ==================== 问题1: 主题趋势 ====================
+// 🔥 根据热度值计算颜色参数
+function heatToColor(value) {
+    if (value >= 75) {
+        return { hue: 0, sat: 85, light1: 55, light2: 40 };   // 红
+    }
+    if (value >= 50) {
+        return { hue: 40, sat: 90, light1: 55, light2: 40 };  // 黄橙
+    }
+    if (value >= 25) {
+        return { hue: 190, sat: 75, light1: 50, light2: 38 }; // 蓝
+    }
+    return { hue: 0, sat: 0, light1: 55, light2: 40 }; // 深灰
+}
+
 function loadTopics() {
     fetch('/api/topics')
         .then(response => response.json())
@@ -256,19 +270,28 @@ function renderTrendsTable(data) {
         else if (heatIndex >= 50) heatClass = 'text-warning fw-bold';
         else if (heatIndex >= 25) heatClass = 'text-info';
 
+        const c = heatToColor(heatIndex);
         html += `
-            <tr>
-                <td><strong>${topic.topic}</strong></td>
-                <td class="${heatClass}">
-                    <span class="heat-badge">${heatIndex.toFixed(1)}</span>
-                </td>
-                <td>${topic.totalQuestions || 0}</td>
-                <td>${topic.totalAnswers || 0}</td>
-                <td>${(topic.avgScore || 0).toFixed(1)}</td>
-                <td>${Math.round(topic.avgViewCount || 0).toLocaleString()}</td>
-                <td>${(topic.acceptedAnswerRate || 0).toFixed(1)}%</td>
-                <td>${trendBadge}</td>
-            </tr>
+        <tr>
+            <td><strong>${topic.topic}</strong></td>
+            <td>
+                <span class="heat-badge"
+                      style="
+                        --hue:${c.hue};
+                        --sat:${c.sat}%;
+                        --light1:${c.light1}%;
+                        --light2:${c.light2}%;
+                      ">
+                    ${heatIndex.toFixed(1)}
+                </span>
+            </td>
+            <td>${topic.totalQuestions || 0}</td>
+            <td>${topic.totalAnswers || 0}</td>
+            <td>${(topic.avgScore || 0).toFixed(1)}</td>
+            <td>${Math.round(topic.avgViewCount || 0).toLocaleString()}</td>
+            <td>${(topic.acceptedAnswerRate || 0).toFixed(1)}%</td>
+            <td>${trendBadge}</td>
+        </tr>
         `;
     });
 
