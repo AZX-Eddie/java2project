@@ -41,7 +41,7 @@ public class DataCollectionService {
     }
 
     /**
-     * 🔥 新方法：按月收集固定数量的问题
+     * 按月收集固定数量的问题
      * @param monthsBack 往前追溯的月份数
      * @param questionsPerMonth 每月收集的问题数量
      */

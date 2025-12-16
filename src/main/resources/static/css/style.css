@@ -100,7 +100,6 @@ body {
     transition: background-color 0.3s;
 }
 
-/* 🔥 热度徽章（动态渐变） */
 .heat-badge {
     --hue: 210;
     --sat: 80%;
@@ -125,7 +124,6 @@ body {
     text-align: center;
 }
 
-/* 🔥 新增：热度图例样式 */
 .heat-legend {
     display: flex;
     align-items: center;
@@ -138,7 +136,6 @@ body {
     padding: 4px 8px;
 }
 
-/* 🔥 新增：渐变背景 */
 .bg-gradient-primary {
     background: linear-gradient(135deg, #d5cda0 0%, #c6ae31 100%) !important;
     color: white;
@@ -148,7 +145,6 @@ body {
     color: white !important;
 }
 
-/* 🔥 新增：热度相关的文本颜色 */
 .text-heat-high {
     color: #dc3545;
     font-weight: bold;
@@ -260,7 +256,6 @@ body {
         font-size: 1.8rem;
     }
 
-    /* 🔥 新增：移动端优化 */
     .heat-legend {
         flex-direction: column;
         align-items: flex-start;
@@ -304,7 +299,6 @@ body {
     background-color: #6c757d;
 }
 
-/* 🔥 新增：趋势徽章增强样式 */
 .badge.bg-success {
     background-color: #28a745 !important;
 }
@@ -326,7 +320,6 @@ body {
     color: #212529 !important;
 }
 
-/* 🔥 新增：表格中的热度高亮 */
 .table tbody tr td:nth-child(2) {
     font-weight: 500;
 }
@@ -335,7 +328,7 @@ body {
     background-color: rgba(102, 126, 234, 0.1);
 }
 
-/* 🔥 新增：信息提示框样式增强 */
+
 .alert-info {
     background-color: #e7f3ff;
     border-color: #bee5eb;
@@ -355,7 +348,6 @@ body {
     margin-bottom: 5px;
 }
 
-/* 🔥 新增：卡片头部的小文本样式 */
 .card-header .small {
     opacity: 0.9;
     font-size: 0.875rem;
@@ -363,7 +355,6 @@ body {
     display: block;
 }
 
-/* 🔥 新增：选择框样式增强 */
 .card-header .form-select {
     border: 2px solid rgba(255, 255, 255, 0.3);
     background-color: rgba(255, 255, 255, 0.9);
@@ -375,12 +366,10 @@ body {
     box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
 }
 
-/* 🔥 新增：平滑滚动 */
 html {
     scroll-behavior: smooth;
 }
 
-/* 🔥 新增：数字动画效果 */
 @keyframes countUp {
     from {
         opacity: 0;
@@ -396,7 +385,6 @@ html {
     animation: countUp 0.5s ease-out;
 }
 
-/* 🔥 新增：图表加载状态 */
 .chart-container.loading::before {
     content: '';
     position: absolute;
@@ -412,7 +400,6 @@ html {
     z-index: 1000;
 }
 
-/* 🔥 新增：表格内数字右对齐 */
 .table tbody td:nth-child(3),
 .table tbody td:nth-child(4),
 .table tbody td:nth-child(5),
@@ -429,26 +416,22 @@ html {
     text-align: right;
 }
 
-/* 🔥 新增：主题名称强调 */
 .table tbody td:nth-child(1) strong {
     color: #495057;
     font-size: 0.95rem;
 }
 
-/* 🔥 新增：渐变分隔线 */
 .nav-tabs {
     border-bottom: 3px solid transparent;
     background: linear-gradient(to right, #dce5e8, #e0e7e8);
     background-clip: border-box;
 }
 
-/* 🔥 新增：卡片阴影增强 */
 .card:hover {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     transition: box-shadow 0.3s ease;
 }
 
-/* 🔥 新增：按钮样式优化（如果需要） */
 .btn-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
@@ -461,7 +444,6 @@ html {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* 🔥 新增：表格中的趋势图标动画 */
 @keyframes trendUp {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-3px); }
@@ -480,17 +462,14 @@ html {
     animation: trendDown 2s ease-in-out infinite;
 }
 
-/* 🔥 新增：图表容器内边距调整 */
 .card-body .chart-container {
     margin: 10px 0;
 }
 
-/* 🔥 新增：表格斑马纹优化 */
 .table-striped > tbody > tr:nth-of-type(odd) > * {
     background-color: rgba(0, 0, 0, 0.02);
 }
 
-/* 🔥 新增：打印样式 */
 @media print {
     .navbar, .footer, .card-header .row {
         display: none;
@@ -505,7 +484,6 @@ html {
     }
 }
 
-/* 🔥 新增：深色模式支持（可选） */
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1a1a1a;

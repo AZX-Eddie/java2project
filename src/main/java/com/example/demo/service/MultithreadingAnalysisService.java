@@ -445,7 +445,7 @@ public class MultithreadingAnalysisService {
      */
     public Map<String, Long> getExceptionDistribution() {
         List<Question> allQuestions = questionRepository.findAll();
-        List<Answer> allAnswers = answerRepository.findAll();  // 🔥 也分析答案
+        List<Answer> allAnswers = answerRepository.findAll();  //  也分析答案
 
         Map<String, Long> exceptions = new HashMap<>();
         Pattern exceptionPattern = Pattern.compile("([A-Z][a-zA-Z]*Exception|[A-Z][a-zA-Z]*Error)");

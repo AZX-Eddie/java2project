@@ -37,14 +37,14 @@ public class TopicTrendService {
     }
 
     /**
-     * 🔥 获取当前未完成的月份（用于过滤）
+     *  获取当前未完成的月份（用于过滤）
      */
     private String getCurrentIncompleteMonth() {
         return YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
     }
 
     /**
-     * 🔥 判断是否应该排除某个月份
+     * 判断是否应该排除某个月份
      */
     private boolean shouldExcludeMonth(String month) {
         if (month == null) return true;
@@ -61,7 +61,7 @@ public class TopicTrendService {
     }
 
     /**
-     * 🔥 生成完整的月份列表（从 cutoffDate 到上个月）
+     *  生成完整的月份列表（从 cutoffDate 到上个月）
      */
     private List<String> generateCompleteMonthRange(int years) {
         List<String> months = new ArrayList<>();
@@ -78,14 +78,14 @@ public class TopicTrendService {
     }
 
     /**
-     * 🔥 修改后的方法：获取所有主题的趋势（包含完整时间范围）
+     *  修改后的方法：获取所有主题的趋势（包含完整时间范围）
      */
     public List<TopicTrendDTO> getAllTopicTrendsWithHeatIndex(int years) {
         List<Question> allQuestions = questionRepository.findAll();
 
         LocalDate cutoffDate = LocalDate.now().minusYears(years);
 
-        // 🔥 生成完整的月份列表
+        //  生成完整的月份列表
         List<String> completeMonths = generateCompleteMonthRange(years);
         System.out.println("📅 完整月份范围: " + completeMonths.get(0) + " 至 " + completeMonths.get(completeMonths.size() - 1));
         System.out.println("📅 总月份数: " + completeMonths.size());
@@ -107,7 +107,7 @@ public class TopicTrendService {
         // 计算全局统计
         GlobalStats globalStats = calculateGlobalStats(filteredQuestions);
 
-        // 🔥 传入完整月份列表
+        //  传入完整月份列表
         return JAVA_TOPICS.stream()
                 .map(topic -> calculateTopicTrendWithHeat(topic, filteredQuestions, globalStats, completeMonths))
                 .filter(dto -> dto.getTotalQuestions() > 0)
@@ -116,7 +116,7 @@ public class TopicTrendService {
     }
 
     /**
-     * 🔥 修改后：计算单个主题的趋势（填充完整月份）
+     *  修改后：计算单个主题的趋势（填充完整月份）
      */
     private TopicTrendDTO calculateTopicTrendWithHeat(String topic,
                                                       List<Question> allQuestions,
@@ -136,7 +136,7 @@ public class TopicTrendService {
         // 按月分组统计（只有有数据的月份）
         Map<String, MonthlyMetrics> monthlyMetricsMap = calculateMonthlyMetrics(topicQuestions);
 
-        // 🔥 使用完整月份列表，填充缺失月份为0
+        //  使用完整月份列表，填充缺失月份为0
         Map<String, Double> monthlyHeatIndex = new LinkedHashMap<>();  // 保持插入顺序
         Map<String, Long> monthlyQuestionCount = new LinkedHashMap<>();
         Map<String, Long> monthlyAnswerCount = new LinkedHashMap<>();
@@ -153,7 +153,7 @@ public class TopicTrendService {
                 monthlyAnswerCount.put(month, metrics.totalAnswers);
                 monthlyAvgScore.put(month, Math.round(metrics.avgScore * 100.0) / 100.0);
             } else {
-                // 🔥 没有数据的月份，填充0
+                //  没有数据的月份，填充0
                 monthlyHeatIndex.put(month, 0.0);
                 monthlyQuestionCount.put(month, 0L);
                 monthlyAnswerCount.put(month, 0L);
@@ -189,7 +189,7 @@ public class TopicTrendService {
     }
 
     /**
-     * 计算每月指标（🔥 自动过滤当前未完成月份）
+     * 计算每月指标（ 自动过滤当前未完成月份）
      */
     private Map<String, MonthlyMetrics> calculateMonthlyMetrics(List<Question> questions) {
         Map<String, MonthlyMetrics> metricsMap = new TreeMap<>();
@@ -197,7 +197,7 @@ public class TopicTrendService {
         for (Question q : questions) {
             String month = parseToMonth(q.getCreationDate());
 
-            // 🔥 跳过当前未完成月份
+            //  跳过当前未完成月份
             if (shouldExcludeMonth(month)) {
                 continue;
             }
@@ -262,7 +262,7 @@ public class TopicTrendService {
     }
 
     /**
-     * 计算全局统计（用于归一化）🔥 排除当前未完成月份
+     * 计算全局统计（用于归一化） 排除当前未完成月份
      */
     private GlobalStats calculateGlobalStats(List<Question> questions) {
         GlobalStats stats = new GlobalStats();
@@ -274,7 +274,7 @@ public class TopicTrendService {
         for (Question q : questions) {
             String month = parseToMonth(q.getCreationDate());
 
-            // 🔥 跳过当前未完成月份
+            //  跳过当前未完成月份
             if (shouldExcludeMonth(month)) {
                 continue;
             }
@@ -394,13 +394,13 @@ public class TopicTrendService {
     }
 
     /**
-     * 🔥 同样修改单个主题的方法
+     *  同样修改单个主题的方法
      */
     public TopicTrendDTO getTopicTrend(String topic, int years) {
         List<Question> allQuestions = questionRepository.findAll();
         LocalDate cutoffDate = LocalDate.now().minusYears(years);
 
-        // 🔥 生成完整月份列表
+        //  生成完整月份列表
         List<String> completeMonths = generateCompleteMonthRange(years);
 
         List<Question> filteredQuestions = allQuestions.stream()
@@ -415,7 +415,7 @@ public class TopicTrendService {
 
         GlobalStats globalStats = calculateGlobalStats(filteredQuestions);
 
-        // 🔥 传入完整月份列表
+        //  传入完整月份列表
         return calculateTopicTrendWithHeat(topic, filteredQuestions, globalStats, completeMonths);
     }
 

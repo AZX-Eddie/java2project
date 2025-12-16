@@ -37,7 +37,6 @@ function loadStats() {
 }
 
 // ==================== 问题1: 主题趋势 ====================
-// 🔥 根据热度值计算颜色参数
 function heatToColor(value) {
     if (value >= 75) {
         return { hue: 0, sat: 85, light1: 55, light2: 40 };   // 红
@@ -99,7 +98,6 @@ function loadSingleTrend() {
         .catch(error => console.error('加载单主题趋势失败:', error));
 }
 
-// 🔥 修改后：使用相对热度替代问题数量
 function renderTrendsChart(data) {
     const ctx = document.getElementById('trendsChart').getContext('2d');
 
@@ -225,7 +223,6 @@ function renderTrendsChart(data) {
     });
 }
 
-// 🔥 修改后：表格中添加热度指数列
 function renderTrendsTable(data) {
     // 按整体热度排序
     const sortedData = [...data].sort((a, b) =>
