@@ -29,6 +29,7 @@ public class DataCollectionService {
 
     private static final String BASE_URL = "https://api.stackexchange.com/2.3";
     private static final String SITE = "stackoverflow";
+    private static final String API_KEY = "rl_QEFWs4mk3SdSwV7PmnJquqMSM";
 
     public DataCollectionService(QuestionRepository questionRepository,
                                  AnswerRepository answerRepository,
@@ -118,7 +119,8 @@ public class DataCollectionService {
                             "&sort=votes" +  // 按投票排序，获取有代表性的问题
                             "&tagged=java" +
                             "&site=" + SITE +
-                            "&filter=withbody";
+                            "&filter=withbody" +
+                            "&key=" + API_KEY;
 
                     String response = restTemplate.getForObject(url, String.class);
                     JSONObject json = new JSONObject(response);
@@ -209,7 +211,8 @@ public class DataCollectionService {
                             "&sort=creation" +
                             "&tagged=java" +
                             "&site=" + SITE +
-                            "&filter=withbody";
+                            "&filter=withbody" +
+                            "&key=" + API_KEY;
 
                     String response = restTemplate.getForObject(url, String.class);
                     JSONObject json = new JSONObject(response);
@@ -303,7 +306,8 @@ public class DataCollectionService {
                             "&order=desc" +
                             "&sort=votes" +
                             "&site=" + SITE +
-                            "&filter=withbody";
+                            "&filter=withbody" +
+                            "&key=" + API_KEY;
 
                     String response = restTemplate.getForObject(url, String.class);
                     JSONObject json = new JSONObject(response);
@@ -387,7 +391,8 @@ public class DataCollectionService {
                             "&order=desc" +
                             "&sort=creation" +
                             "&site=" + SITE +
-                            "&filter=withbody";
+                            "&filter=withbody" +
+                            "&key=" + API_KEY;
 
                     String response = restTemplate.getForObject(url, String.class);
                     JSONObject json = new JSONObject(response);
@@ -470,7 +475,8 @@ public class DataCollectionService {
                         "&sort=creation" +
                         "&site=" + SITE +
                         "&filter=withbody" +
-                        "&pagesize=100";
+                        "&pagesize=100" +
+                        "&key=" + API_KEY;
 
                 String response = restTemplate.getForObject(url, String.class);
                 JSONObject json = new JSONObject(response);
